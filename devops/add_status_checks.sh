@@ -510,24 +510,26 @@ EOF
   # inside another $() is deeply nested syntax that bash handles
   # inconsistently and causes premature termination of the outer $().
   PR_BASE=$(echo "${PROTECTED_BRANCHES:-develop,main}" | cut -d',' -f1 | xargs)
-  PR_BODY="## Summary
-Automated PR to register GitHub Actions workflow check names with branch protection.
-This PR is created by devops/add_status_checks.sh and will be closed automatically.
-
-## Related Ticket
-Relates to #DEVOPS-01
-
-## Type of Change
-- [x] Docs
-
-## Robot Deployment Impact
-- [x] No deployed robot impact
-
-## Breaking Changes
-- [x] No
-
-## Checklist
-- [x] Self-reviewed"
+  PR_BODY_FILE=$(mktemp)
+  printf '%s\n' \
+    "## Summary" \
+    "Automated PR to register GitHub Actions workflow check names." \
+    "This PR is created by devops/add_status_checks.sh and will be closed automatically." \
+    "" \
+    "## Related Ticket" \
+    "Relates to #DEVOPS-01" \
+    "" \
+    "## Type of Change" \
+    "- [x] Docs" \
+    "" \
+    "## Robot Deployment Impact" \
+    "- [x] No deployed robot impact" \
+    "" \
+    "## Breaking Changes" \
+    "- [x] No" \
+    "" \
+    "## Checklist" \
+    "- [x] Self-reviewed" > "$PR_BODY_FILE"
 
   info "Opening Pull Request..."
   PR_OUTPUT=$(gh pr create \
@@ -535,8 +537,9 @@ Relates to #DEVOPS-01
     --base "$PR_BASE" \
     --head "$TRIGGER_BRANCH" \
     --title "ci(repo): trigger workflow registration for branch protection" \
-    --body "$PR_BODY" 2>&1)
+    --body-file "$PR_BODY_FILE" 2>&1)
   PR_EXIT=$?
+  rm -f "$PR_BODY_FILE"
 
   # Log full output for debugging
   echo "  [DEBUG] gh pr create output: $PR_OUTPUT" >> "${AUDIT_LOG:-/dev/null}"
