@@ -491,7 +491,7 @@ EOF
     --repo "$REPO_SLUG" \
     --base "$(echo "${PROTECTED_BRANCHES:-develop,main}" | cut -d',' -f1 | xargs)" \
     --head "$TRIGGER_BRANCH" \
-    --title "ci(repo): trigger workflow registration for branch protection" \
+    --title "chore(repo): trigger workflow registration for branch protection" \
     --body "$(cat << 'EOF'
 ## Summary
 Automated PR to register GitHub Actions workflow check names with branch protection.
