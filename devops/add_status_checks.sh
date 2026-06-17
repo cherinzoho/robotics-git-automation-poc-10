@@ -505,17 +505,14 @@ EOF
   # commit yet even though the push completed locally.
   sleep 5
 
-  # Open a PR using gh CLI
-  info "Opening Pull Request..."
-  PR_OUTPUT=$(gh pr create \
-    --repo "$REPO_SLUG" \
-    --base "$(echo "${PROTECTED_BRANCHES:-develop,main}" | cut -d',' -f1 | xargs)" \
-    --head "$TRIGGER_BRANCH" \
-    --title "ci(repo): trigger workflow registration for branch protection" \
-    --body "$(cat << 'EOF'
-## Summary
+  # Open a PR using gh CLI.
+  # PR body built into a variable first — a heredoc inside $() inside ""
+  # inside another $() is deeply nested syntax that bash handles
+  # inconsistently and causes premature termination of the outer $().
+  PR_BASE=$(echo "${PROTECTED_BRANCHES:-develop,main}" | cut -d',' -f1 | xargs)
+  PR_BODY="## Summary
 Automated PR to register GitHub Actions workflow check names with branch protection.
-This PR is created by tools/add_status_checks.sh and will be closed automatically.
+This PR is created by devops/add_status_checks.sh and will be closed automatically.
 
 ## Related Ticket
 Relates to #DEVOPS-01
@@ -530,9 +527,15 @@ Relates to #DEVOPS-01
 - [x] No
 
 ## Checklist
-- [x] Self-reviewed
-EOF
-)" 2>&1)
+- [x] Self-reviewed"
+
+  info "Opening Pull Request..."
+  PR_OUTPUT=$(gh pr create \
+    --repo "$REPO_SLUG" \
+    --base "$PR_BASE" \
+    --head "$TRIGGER_BRANCH" \
+    --title "ci(repo): trigger workflow registration for branch protection" \
+    --body "$PR_BODY" 2>&1)
   PR_EXIT=$?
 
   # Log full output for debugging
