@@ -499,6 +499,12 @@ EOF
   fi
   pass "Trigger branch pushed"
 
+  # Wait for GitHub to process the push before opening the PR.
+  # Without this, gh pr create fails with "No commits between develop
+  # and trigger branch" because GitHub API has not registered the
+  # commit yet even though the push completed locally.
+  sleep 5
+
   # Open a PR using gh CLI
   info "Opening Pull Request..."
   PR_OUTPUT=$(gh pr create \
