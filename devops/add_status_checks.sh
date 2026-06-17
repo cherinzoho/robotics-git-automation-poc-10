@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================
-#  Zoho Robotics — GitHub Branch Protection + Status Checks
+#  Robotics Division — GitHub Branch Protection + Status Checks
 #  GitHub-SPECIFIC. Do NOT run on Zoho or other platforms.
 #
 #  PHASE 1 — Run immediately after setup_repo_automation.sh
@@ -92,7 +92,7 @@ REQUIRED_CHECKS=(
 clear
 echo ""
 echo -e "${BOLD}╔══════════════════════════════════════════════════════════╗${RESET}"
-echo -e "${BOLD}║   Zoho Robotics — GitHub Branch Protection Setup     ║${RESET}"
+echo -e "${BOLD}║   Robotics Division — GitHub Branch Protection Setup     ║${RESET}"
 echo -e "${BOLD}║   GitHub-specific — do not run on Zoho or other platforms║${RESET}"
 echo -e "${BOLD}╚══════════════════════════════════════════════════════════╝${RESET}"
 echo ""
@@ -449,29 +449,15 @@ JSON
   git switch -c "$TRIGGER_BRANCH" "origin/${INTEGRATION_BRANCH}" > /dev/null 2>&1
   pass "Trigger branch created from develop"
 
-  # Make a minimal traceable change.
-  # --no-verify bypasses local hooks — this is an internal automation
-  # branch, not developer code. Hooks must be bypassed because:
-  #   1. The commit message has no scope (commitlint would reject it)
-  #   2. README.md may not exist in a fresh repo
+  # Make a minimal traceable change
   TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-  # Create README.md if it does not exist (fresh repository)
-  if [[ ! -f README.md ]]; then
-    echo "# ${REPO_NAME}" > README.md
-  fi
   cat >> README.md << EOF
 
 <!-- automation: workflow registration trigger ${TIMESTAMP} -->
 EOF
   git add README.md
-  COMMIT_OUTPUT=$(git commit --no-verify \
-    -m "ci(repo): register GitHub Actions workflow check names" 2>&1) || true
-  COMMIT_EXIT=$?
-  if [[ $COMMIT_EXIT -ne 0 ]]; then
-    fail "Failed to create trigger commit: $COMMIT_OUTPUT"
-    cleanup_trigger_branch
-    exit 1
-  fi
+  git commit -m "ci(repo): trigger workflow registration for branch protection" \
+    > /dev/null 2>&1
   pass "Trigger commit created"
 
   # Push the branch — capture output for debugging
@@ -499,47 +485,35 @@ EOF
   fi
   pass "Trigger branch pushed"
 
-  # Wait for GitHub to process the push before opening the PR.
-  # Without this, gh pr create fails with "No commits between develop
-  # and trigger branch" because GitHub API has not registered the
-  # commit yet even though the push completed locally.
-  sleep 5
-
-  # Open a PR using gh CLI.
-  # PR body built into a variable first — a heredoc inside $() inside ""
-  # inside another $() is deeply nested syntax that bash handles
-  # inconsistently and causes premature termination of the outer $().
-  PR_BASE=$(echo "${PROTECTED_BRANCHES:-develop,main}" | cut -d',' -f1 | xargs)
-  PR_BODY_FILE=$(mktemp)
-  printf '%s\n' \
-    "## Summary" \
-    "Automated PR to register GitHub Actions workflow check names." \
-    "This PR is created by devops/add_status_checks.sh and will be closed automatically." \
-    "" \
-    "## Related Ticket" \
-    "Relates to #DEVOPS-01" \
-    "" \
-    "## Type of Change" \
-    "- [x] Docs" \
-    "" \
-    "## Robot Deployment Impact" \
-    "- [x] No deployed robot impact" \
-    "" \
-    "## Breaking Changes" \
-    "- [x] No" \
-    "" \
-    "## Checklist" \
-    "- [x] Self-reviewed" > "$PR_BODY_FILE"
-
+  # Open a PR using gh CLI
   info "Opening Pull Request..."
   PR_OUTPUT=$(gh pr create \
     --repo "$REPO_SLUG" \
-    --base "$PR_BASE" \
+    --base "$(echo "${PROTECTED_BRANCHES:-develop,main}" | cut -d',' -f1 | xargs)" \
     --head "$TRIGGER_BRANCH" \
     --title "ci(repo): trigger workflow registration for branch protection" \
-    --body-file "$PR_BODY_FILE" 2>&1)
+    --body "$(cat << 'EOF'
+## Summary
+Automated PR to register GitHub Actions workflow check names with branch protection.
+This PR is created by tools/add_status_checks.sh and will be closed automatically.
+
+## Related Ticket
+Relates to #DEVOPS-01
+
+## Type of Change
+- [x] Docs
+
+## Robot Deployment Impact
+- [x] No deployed robot impact
+
+## Breaking Changes
+- [x] No
+
+## Checklist
+- [x] Self-reviewed
+EOF
+)" 2>&1)
   PR_EXIT=$?
-  rm -f "$PR_BODY_FILE"
 
   # Log full output for debugging
   echo "  [DEBUG] gh pr create output: $PR_OUTPUT" >> "${AUDIT_LOG:-/dev/null}"
