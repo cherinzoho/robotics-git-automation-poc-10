@@ -456,7 +456,7 @@ JSON
 <!-- automation: workflow registration trigger ${TIMESTAMP} -->
 EOF
   git add README.md
-  git commit -m "ci(repo): trigger workflow registration for branch protection" \
+  git commit -m "chore(repo): trigger workflow registration for branch protection" \
     > /dev/null 2>&1
   pass "Trigger commit created"
 
