@@ -445,8 +445,15 @@ JSON
 
   # Create trigger branch from develop
   info "Creating trigger branch: $TRIGGER_BRANCH..."
-  git fetch origin "${INTEGRATION_BRANCH_NAME:-develop}" > /dev/null 2>&1
-  git switch -c "$TRIGGER_BRANCH" "origin/${INTEGRATION_BRANCH}" > /dev/null 2>&1
+  # Use INTEGRATION_BRANCH_NAME from project.env consistently.
+  # INTEGRATION_BRANCH (without _NAME) is only set inside the Phase 1
+  # block — if it is empty the git switch fails silently under set -e.
+  _INT_BRANCH="${INTEGRATION_BRANCH:-${INTEGRATION_BRANCH_NAME:-develop}}"
+  git fetch origin "$_INT_BRANCH" > /dev/null 2>&1
+  git switch -c "$TRIGGER_BRANCH" "origin/$_INT_BRANCH" 2>&1 | head -3 || {
+    fail "Failed to create trigger branch from origin/$_INT_BRANCH"
+    exit 1
+  }
   pass "Trigger branch created from develop"
 
   # Make a minimal traceable change
