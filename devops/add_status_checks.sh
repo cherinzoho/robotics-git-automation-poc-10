@@ -16,8 +16,8 @@
 #    Verifies the complete final state via GitHub API
 #
 #  Usage:
-#    bash tools/add_status_checks.sh --phase1   after setup_repo_automation.sh
-#    bash tools/add_status_checks.sh --phase2   after first test PR workflows pass
+#    bash devops/add_status_checks.sh --phase1   after setup_repo_automation.sh
+#    bash devops/add_status_checks.sh --phase2   after first test PR workflows pass
 # ============================================================
 
 set -e
@@ -44,11 +44,11 @@ case "${1:-}" in
   *)
     echo ""
     echo "Usage:"
-    echo "  bash tools/add_status_checks.sh --phase1"
+    echo "  bash devops/add_status_checks.sh --phase1"
     echo "    Run immediately after setup_repo_automation.sh"
     echo "    Configures branch protection rules"
     echo ""
-    echo "  bash tools/add_status_checks.sh --phase2"
+    echo "  bash devops/add_status_checks.sh --phase2"
     echo "    Run after a test PR triggers GitHub Actions workflows"
     echo "    Adds status check names to branch protection"
     echo ""
@@ -68,7 +68,7 @@ REPO_NAME=$(basename "$REPO_ROOT")
 cd "$REPO_ROOT"
 
 # ── Load project.env if present ─────────────────────────────
-PROJECT_FILE="$REPO_ROOT/tools/project.env"
+PROJECT_FILE="$REPO_ROOT/devops/project.env"
 [[ -f "$PROJECT_FILE" ]] && source "$PROJECT_FILE"
 
 # ── Local audit log ─────────────────────────────────────────────
@@ -79,7 +79,7 @@ echo "add_status_checks.sh started: $(date '+%Y-%m-%d %H:%M:%S')" >> "$AUDIT_LOG
 
 # ── Status checks required by both phases ─────────────────────
 # These must exactly match the name: fields in .github/workflows/
-# Values read from tools/project.env
+# Values read from devops/project.env
 REQUIRED_CHECKS=(
   "${STATUS_CHECK_BRANCH_NAME:-Branch Name Check}"
   "${STATUS_CHECK_PR_TITLE:-PR Title Check}"
@@ -128,7 +128,7 @@ install_gh() {
     fail "apt has broken GPG keys — gh cannot be installed safely"
     fail "Fix this first by running setup_developer_system.sh:"
     echo ""
-    echo -e "    ${CYAN}bash tools/setup_developer_system.sh${RESET}"
+    echo -e "    ${CYAN}bash devops/setup_developer_system.sh${RESET}"
     echo ""
     echo "  setup_developer_system.sh fixes all broken apt GPG keys"
     echo "  (Chrome, NodeSource, and others) before any installation."
@@ -401,7 +401,7 @@ JSON
     echo "  2. Open a Pull Request targeting develop on GitHub"
     echo "  3. Wait for all 5 workflow checks to appear (1-2 minutes)"
     echo "  4. Run Phase 2:"
-    echo -e "     ${CYAN}bash tools/add_status_checks.sh --phase2${RESET}"
+    echo -e "     ${CYAN}bash devops/add_status_checks.sh --phase2${RESET}"
     echo ""
     echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
     echo ""
@@ -482,7 +482,7 @@ EOF
     echo "  Manual alternative:"
     echo "  1. Push a branch manually and open a PR on GitHub"
     echo "  2. Wait for workflows to complete"
-    echo "  3. Run: bash tools/add_status_checks.sh --phase2"
+    echo "  3. Run: bash devops/add_status_checks.sh --phase2"
     echo ""
     trap - EXIT
     cleanup_trigger_branch
@@ -500,7 +500,7 @@ EOF
     --body "$(cat << 'EOF'
 ## Summary
 Automated PR to register GitHub Actions workflow check names with branch protection.
-This PR is created by tools/add_status_checks.sh and will be closed automatically.
+This PR is created by devops/add_status_checks.sh and will be closed automatically.
 
 ## Related Ticket
 Relates to #DEVOPS-01
@@ -540,7 +540,7 @@ EOF
     echo "  1. Open a PR manually on GitHub from devops/register-workflow-checks → develop"
     echo "     OR create any PR targeting develop"
     echo "  2. Wait for all 5 workflow checks to appear (1-2 minutes)"
-    echo "  3. Run: bash tools/add_status_checks.sh --phase2"
+    echo "  3. Run: bash devops/add_status_checks.sh --phase2"
     echo ""
     trap - EXIT
     cleanup_trigger_branch
@@ -621,7 +621,7 @@ EOF
     echo ""
     warn "Workflows did not complete within ${MAX_WAIT}s"
     warn "They may still be running. Wait for them to complete then run:"
-    echo -e "    ${CYAN}bash tools/add_status_checks.sh --phase2${RESET}"
+    echo -e "    ${CYAN}bash devops/add_status_checks.sh --phase2${RESET}"
     echo ""
     exit 0
   fi
@@ -697,7 +697,7 @@ else
     fail "Phase 1 has not been run yet"
     echo ""
     echo "  Run Phase 1 first:"
-    echo -e "    ${CYAN}bash tools/add_status_checks.sh --phase1${RESET}"
+    echo -e "    ${CYAN}bash devops/add_status_checks.sh --phase1${RESET}"
     echo ""
     exit 1
   fi
@@ -716,7 +716,7 @@ print(reviews.get('required_approving_review_count','0'))" \
     warn "Phase 1 may not have completed correctly"
     read -r -p "  Continue anyway? (y/N): " CONTINUE_P1
     [[ "$CONTINUE_P1" != "y" && "$CONTINUE_P1" != "Y" ]] && {
-      echo "  Run: bash tools/add_status_checks.sh --phase1"
+      echo "  Run: bash devops/add_status_checks.sh --phase1"
       exit 1
     }
   fi
@@ -946,7 +946,7 @@ echo "    Remote → PR title, ticket ref, C++ format, Python style"
 echo "    Merge  → required approvals + all 5 checks must pass"
 echo ""
 echo -e "${CYAN}  Every developer who clones this repository runs:${RESET}"
-echo "    bash tools/setup_repo_hooks.sh"
+echo "    bash devops/setup_repo_hooks.sh"
 echo ""
 echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
 echo ""
