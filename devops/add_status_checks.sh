@@ -456,12 +456,7 @@ JSON
 <!-- automation: workflow registration trigger ${TIMESTAMP} -->
 EOF
   git add README.md
-  # --no-verify bypasses commitlint and pre-commit hooks.
-  # This is an internal automation branch — the commit exists only to
-  # trigger GitHub Actions. node_modules/ may not be present on the
-  # Engineering Lead machine if setup_repo_hooks.sh has not been run.
-  git commit --no-verify \
-    -m "ci(repo): trigger workflow registration for branch protection" \
+  git commit -m "ci(repo): trigger workflow registration for branch protection" \
     > /dev/null 2>&1
   pass "Trigger commit created"
 
