@@ -9,11 +9,11 @@
 #    1. Repository cloned locally
 #    2. develop branch exists and is checked out
 #    3. setup_developer_system.sh has been run on this machine
-#    4. devops/project.env is present in the repository
+#    4. $TOOLS_DIR_NAME/project.env is present in the repository
 #
 #  Usage:
 #    cd ~/robotics-dev/<repo-name>
-#    ./devops/setup_repo_automation.sh
+#    ./$TOOLS_DIR_NAME/setup_repo_automation.sh
 # ============================================================
 
 set -e
@@ -48,20 +48,23 @@ REPO_NAME=$(basename "$REPO_ROOT")
 cd "$REPO_ROOT"
 
 # ── Load project.env ─────────────────────────────────────────
-PROJECT_FILE="$REPO_ROOT/devops/project.env"
+# Derive folder name from script location — works regardless of folder name
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TOOLS_DIR_NAME="$(basename "$SCRIPT_DIR")"
+PROJECT_FILE="$SCRIPT_DIR/project.env"
 
 if [[ ! -f "$PROJECT_FILE" ]]; then
   echo ""
   fail "project.env not found at: $PROJECT_FILE"
   echo ""
-  echo "  project.env must be present in devops/ before running this script."
+  echo "  project.env must be present in $TOOLS_DIR_NAME/ before running this script."
   echo "  Copy it from the POC repository:"
-  echo "    github.com/cherinzoho/robotics-git-automation-poc/devops/project.env"
+  echo "    github.com/cherinzoho/robotics-git-automation-poc/$TOOLS_DIR_NAME/project.env"
   echo ""
   exit 1
 fi
 
-# shellcheck source=devops/project.env
+# shellcheck source=$TOOLS_DIR_NAME/project.env
 source "$PROJECT_FILE"
 
 # Validate required variables
@@ -209,7 +212,7 @@ node_modules/
 compile_commands.json
 
 # Setup audit logs — local only, do not commit
-devops/logs/
+${TOOLS_DIR_NAME}/logs/
 EOF
   pass ".gitignore extended with ROS2 and Node.js entries"
 fi
@@ -341,19 +344,19 @@ module.exports = {
     'scope-empty': [2, 'never'],
 
     // Allowed types: ${TYPE_LIST}
-    // Add custom types to COMMIT_TYPES in devops/project.env
+    // Add custom types to COMMIT_TYPES in ${TOOLS_DIR_NAME}/project.env
     'type-enum': [2, 'always', [
 ${TYPE_ARRAY_JS}
     ]],
 
-    // Allowed scopes — edit COMMIT_SCOPES in devops/project.env
+    // Allowed scopes — edit COMMIT_SCOPES in ${TOOLS_DIR_NAME}/project.env
     // Format in project.env: scope:description
     'scope-enum': [2, 'always', [
 ${SCOPE_ARRAY_JS}
     ]],
 
     // Subject max ${COMMIT_SUBJECT_MAX_LENGTH} characters
-    // Edit COMMIT_SUBJECT_MAX_LENGTH in devops/project.env
+    // Edit COMMIT_SUBJECT_MAX_LENGTH in ${TOOLS_DIR_NAME}/project.env
     'subject-max-length': [2, 'always', ${COMMIT_SUBJECT_MAX_LENGTH}],
 
     // subject-case disabled — technical acronyms (ROS2, SLAM, AMR) conflict
@@ -390,7 +393,7 @@ else
   cat > .husky/commit-msg << EOF
 #!/bin/bash
 # commit-msg hook — validates commit message format using commitlint
-# Edit allowed types and scopes in devops/project.env
+# Edit allowed types and scopes in $TOOLS_DIR_NAME/project.env
 
 COMMIT_MSG_FILE="\$1"
 COMMIT_MSG=\$(cat "\$COMMIT_MSG_FILE")
@@ -476,7 +479,7 @@ if echo "\$branch" | grep -qE "^(${RELEASE_BRANCH_NAME:-main}|${INTEGRATION_BRAN
   exit 0
 fi
 
-# Branch name validation rules from devops/project.env:
+# Branch name validation rules from $TOOLS_DIR_NAME/project.env:
 #   Ticket branches    : type/TICKET-ID-short-description
 #   Release branches   : release/MAJOR.MINOR.PATCH
 #   Experiment branches: experiment/topic-name  (no ticket ID required)
@@ -605,14 +608,14 @@ EOF
     echo ""
     echo -e "    ${CYAN}pre-commit autoupdate${RESET}"
     echo ""
-    echo "    Then update the matching REV values in devops/project.env:"
+    echo "    Then update the matching REV values in $TOOLS_DIR_NAME/project.env:"
     echo "      PRECOMMIT_HOOKS_REV"
     echo "      CLANG_FORMAT_REV"
     echo "      BLACK_REV"
     echo "      FLAKE8_REV"
     echo ""
     echo "    Commit the updated project.env:"
-    echo -e "    ${CYAN}git add devops/project.env .pre-commit-config.yaml${RESET}"
+    echo -e "    ${CYAN}git add $TOOLS_DIR_NAME/project.env .pre-commit-config.yaml${RESET}"
     echo -e "    ${CYAN}git commit -m \"chore(repo): update pre-commit hook revisions\"${RESET}"
     echo ""
     read -r -p "  Continue with current versions? (Y/n): " CONTINUE_VERSIONS
@@ -686,7 +689,7 @@ on:
     types: [opened, edited, synchronize, reopened]
     branches: [${INTEGRATION_BRANCH_NAME:-develop}, ${RELEASE_BRANCH_NAME:-main}]
 
-# Patterns generated from devops/project.env
+# Patterns generated from $TOOLS_DIR_NAME/project.env
 # To update: edit project.env and re-run setup_repo_automation.sh
 
 jobs:
@@ -850,7 +853,7 @@ jobs:
         run: |
           git fetch --all --prune
           echo "Scanning for branches inactive for ${STALE_BRANCH_DAYS:-60}+ days..."
-          # Branch types from devops/project.env: ${BRANCH_TYPES}
+          # Branch types from $TOOLS_DIR_NAME/project.env: ${BRANCH_TYPES}
           found=0
           for ref in \$(git branch -r \
             | grep -E "origin/(${BRANCH_TYPE_REGEX})/" \\
@@ -1074,7 +1077,7 @@ if [[ "$ALL_GOOD" == "true" ]]; then
   echo ""
   echo -e "${CYAN}  Platform-agnostic — done for all platforms:${RESET}"
   echo "    Local hooks active: commit-msg, pre-commit, pre-push"
-  echo "    All developers run: ./devops/setup_repo_hooks.sh after cloning"
+  echo "    All developers run: ./$TOOLS_DIR_NAME/setup_repo_hooks.sh after cloning"
   echo ""
   echo -e "${CYAN}  GitHub-specific next steps — run after this script:${RESET}"
   echo ""
@@ -1087,7 +1090,7 @@ if [[ "$ALL_GOOD" == "true" ]]; then
   echo "    → Wait for all 5 checks to appear (green or red)"
   echo ""
   echo "  Step 2 — Configure branch protection + status checks:"
-  echo "    bash devops/add_status_checks.sh"
+  echo "    bash $TOOLS_DIR_NAME/add_status_checks.sh"
   echo "    (requires: gh auth login — GitHub CLI authenticated)"
   echo ""
   echo -e "${CYAN}  Zoho repository next steps:${RESET}"

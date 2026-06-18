@@ -3,7 +3,7 @@
 #  Zoho Robotics — Repository Hook Setup Script
 #  Run once inside each cloned repository.
 #
-#  Versions are read from devops/project.env in the repository.
+#  Versions are read from $TOOLS_DIR_NAME/project.env in the repository.
 #  To upgrade a tool, update project.env — not this script.
 # ============================================================
 
@@ -34,21 +34,25 @@ fi
 REPO_ROOT=$(git rev-parse --show-toplevel)
 REPO_NAME=$(basename "$REPO_ROOT")
 
-# ── Load project.env from repository's devops/ directory ─────
-PROJECT_FILE="$REPO_ROOT/devops/project.env"
+# ── Load project.env from the same directory as this script ─
+# Derives folder name from script location — works regardless of
+# whether the folder is named devops/, tools/, automation/, etc.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TOOLS_DIR_NAME="$(basename "$SCRIPT_DIR")"
+PROJECT_FILE="$SCRIPT_DIR/project.env"
 
 if [[ ! -f "$PROJECT_FILE" ]]; then
   echo ""
   fail "project.env not found at: $PROJECT_FILE"
   echo ""
-  echo "  This file should be committed in the repository under devops/"
+  echo "  This file should be committed in the repository under $TOOLS_DIR_NAME/"
   echo "  Ask your Engineering Lead — the repository may not have"
   echo "  the automation setup committed yet."
   echo ""
   exit 1
 fi
 
-# shellcheck source=devops/project.env
+# shellcheck source=$TOOLS_DIR_NAME/project.env
 source "$PROJECT_FILE"
 
 # Validate required variables

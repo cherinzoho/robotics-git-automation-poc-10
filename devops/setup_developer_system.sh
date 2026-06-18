@@ -29,6 +29,7 @@ header(){ echo ""; echo -e "${BOLD}━━━  $1  ━━━━━━━━━━
 
 # ── Load versions from project.env ──────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TOOLS_DIR_NAME="$(basename "$SCRIPT_DIR")"
 PROJECT_FILE="$SCRIPT_DIR/project.env"
 
 if [[ ! -f "$PROJECT_FILE" ]]; then
@@ -468,7 +469,7 @@ if [[ "$ALL_GOOD" == "true" ]]; then
   echo "    pre-commit:  $(pre-commit --version | grep -oP '\d+\.\d+\.\d+')"
   echo "    ROS2:        $ROS_DISTRO"
   echo ""
-  echo -e "${CYAN}  Next: clone a repository and run devops/setup_repo_hooks.sh${RESET}"
+  echo -e "${CYAN}  Next: clone a repository and run $TOOLS_DIR_NAME/setup_repo_hooks.sh${RESET}"
 else
   echo -e "${RED}${BOLD}  ✖  Some items need attention — see failures above${RESET}"
   echo ""
